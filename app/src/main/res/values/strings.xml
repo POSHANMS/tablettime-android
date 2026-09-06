@@ -48,6 +48,7 @@
     <string name="checkin_yes_confirmation">✅ Please take your tablet now</string>
     <string name="checkin_closing_hint">Closing shortly…</string>
     <string name="snooze_question">When would you like to be reminded?</string>
+    <string name="snooze_1_min">1 min</string>
     <string name="snooze_5_min">5 min</string>
     <string name="snooze_10_min">10 min</string>
     <string name="snooze_30_min">30 min</string>

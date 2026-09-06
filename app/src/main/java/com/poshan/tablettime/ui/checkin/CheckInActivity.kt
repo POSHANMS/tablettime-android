@@ -456,6 +456,7 @@ fun SnoozePickerStep(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             val snoozeOptions = listOf(
+                R.string.snooze_1_min to 1,
                 R.string.snooze_5_min to 5,
                 R.string.snooze_10_min to 10,
                 R.string.snooze_30_min to 30,
