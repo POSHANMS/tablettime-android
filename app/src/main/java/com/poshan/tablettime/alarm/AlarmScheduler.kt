@@ -82,10 +82,19 @@ class AlarmScheduler(private val context: Context) {
         )
 
         try {
-            alarmManager.setAlarmClock(
-                AlarmManager.AlarmClockInfo(triggerTime, showPendingIntent),
-                pendingIntent
-            )
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                alarmManager.setExactAndAllowWhileIdle(
+                    AlarmManager.RTC_WAKEUP,
+                    triggerTime,
+                    pendingIntent
+                )
+            } else {
+                alarmManager.setExact(
+                    AlarmManager.RTC_WAKEUP,
+                    triggerTime,
+                    pendingIntent
+                )
+            }
             Log.d(TAG, "Scheduled exact alarm for reminder #${reminder.id} at $triggerTime (${reminder.formattedTime()})")
         } catch (e: SecurityException) {
             Log.e(TAG, "SecurityException: SCHEDULE_EXACT_ALARM not granted", e)
@@ -128,10 +137,19 @@ class AlarmScheduler(private val context: Context) {
         )
 
         try {
-            alarmManager.setAlarmClock(
-                AlarmManager.AlarmClockInfo(snoozeMillis, showPendingIntent),
-                pendingIntent
-            )
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                alarmManager.setExactAndAllowWhileIdle(
+                    AlarmManager.RTC_WAKEUP,
+                    snoozeMillis,
+                    pendingIntent
+                )
+            } else {
+                alarmManager.setExact(
+                    AlarmManager.RTC_WAKEUP,
+                    snoozeMillis,
+                    pendingIntent
+                )
+            }
             Log.d(TAG, "Scheduled snooze alarm for reminder #$reminderId in $snoozeMinutes min ($snoozeMillis)")
         } catch (e: SecurityException) {
             Log.e(TAG, "SecurityException while setting snooze", e)

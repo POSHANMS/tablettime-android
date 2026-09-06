@@ -13,6 +13,7 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import android.util.Log
+import com.poshan.tablettime.R
 
 /**
  * Manages the alarm sound and vibration during the trigger flow.
@@ -42,32 +43,47 @@ object AlarmSoundPlayer {
         isPlayingSound = true
 
         try {
-            // Find alarm sound URI
-            var alarmUri: Uri? = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-            if (alarmUri == null) {
-                alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-            }
-            if (alarmUri == null) {
-                alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+            val audioAttributes = AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_ALARM)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .build()
+
+            // 1. Play custom peaceful, gentle tablet reminder tone
+            mediaPlayer = try {
+                MediaPlayer.create(context.applicationContext, R.raw.peaceful_tablet_reminder, audioAttributes, 0)?.apply {
+                    isLooping = true
+                    start()
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed playing peaceful raw audio, falling back to system tone", e)
+                null
             }
 
-            mediaPlayer = MediaPlayer().apply {
-                setDataSource(context.applicationContext, alarmUri!!)
-                setAudioAttributes(
-                    AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_ALARM)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                        .build()
-                )
-                isLooping = true
-                prepare()
-                start()
+            // 2. Fallback to system tone if custom sound could not be loaded
+            if (mediaPlayer == null) {
+                var alarmUri: Uri? = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+                if (alarmUri == null) {
+                    alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+                }
+                if (alarmUri == null) {
+                    alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+                }
+
+                if (alarmUri != null) {
+                    mediaPlayer = MediaPlayer().apply {
+                        setDataSource(context.applicationContext, alarmUri)
+                        setAudioAttributes(audioAttributes)
+                        isLooping = true
+                        prepare()
+                        start()
+                    }
+                }
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error playing alarm sound", e)
         }
 
-        // Start vibration
+        // Start gentle vibration
         try {
             vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
@@ -77,7 +93,8 @@ object AlarmSoundPlayer {
                 context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
             }
 
-            val pattern = longArrayOf(0, 800, 400, 800, 400)
+            // Gentle, calming pulse pattern (300ms pulse, 700ms rest)
+            val pattern = longArrayOf(0, 300, 700, 300, 700)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 vibrator?.vibrate(VibrationEffect.createWaveform(pattern, 0))
             } else {
