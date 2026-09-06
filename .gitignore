@@ -1,13 +1,37 @@
-*.iml
-.gradle
-/local.properties
-/.idea
-.DS_Store
+# Built application files and binaries
+*.apk
+*.aar
+*.aab
+*.dex
+*.class
+
+# Gradle files and cache
+.gradle/
 build/
 **/build/
 .kotlin/
-/captures
-.externalNativeBuild
-.cxx
-local.properties
 
+# Local configuration files
+local.properties
+/local.properties
+
+# Log files
+*.log
+
+# Android Studio and IDE
+*.iml
+.idea/
+.idea/libraries/
+.idea/modules.xml
+.idea/workspace.xml
+.idea/caches/
+.idea/assetWizardSettings.xml
+
+# Captures & native build
+/captures/
+.externalNativeBuild/
+.cxx/
+
+# OS specific files
+.DS_Store
+Thumbs.db
