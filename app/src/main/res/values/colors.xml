@@ -1,0 +1,6 @@
+<resources>
+    <color name="primary_teal">#267365</color>
+    <color name="primary_teal_dark">#4EA392</color>
+    <color name="surface_light">#F5F8F7</color>
+    <color name="surface_dark">#121816</color>
+</resources>

@@ -1,0 +1,20 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Capsule Body -->
+    <path
+        android:fillColor="#E0F2EE"
+        android:pathData="M39.6,33.6 C33.4,39.8 33.4,49.8 39.6,56 L52,68.4 C58.2,74.6 68.2,74.6 74.4,68.4 C80.6,62.2 80.6,52.2 74.4,46 L62,33.6 C55.8,27.4 45.8,27.4 39.6,33.6 Z" />
+    <!-- Half Capsule Tint -->
+    <path
+        android:fillColor="#A7D7C5"
+        android:pathData="M39.6,33.6 C33.4,39.8 33.4,49.8 39.6,56 L50.8,67.2 L67.2,50.8 L56,39.6 C49.8,33.4 45.8,31.4 39.6,33.6 Z" />
+    <!-- Divider Line -->
+    <path
+        android:strokeColor="#267365"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M46,62 L62,46" />
+</vector>
