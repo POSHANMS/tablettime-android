@@ -46,7 +46,9 @@ class AlarmScheduler(private val context: Context) {
     }
 
     /**
-     * Schedules the next exact alarm for the given [reminder].
+     * Schedules the next exact regular alarm for the given [reminder].
+     * Always schedules the fixed original recurring time (tomorrow/next scheduled day).
+     * Uses setAlarmClock for guaranteed delivery across Doze, deep sleep, and app kill.
      */
     fun schedule(reminder: Reminder) {
         if (!reminder.isEnabled) {
@@ -82,19 +84,10 @@ class AlarmScheduler(private val context: Context) {
         )
 
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                alarmManager.setExactAndAllowWhileIdle(
-                    AlarmManager.RTC_WAKEUP,
-                    triggerTime,
-                    pendingIntent
-                )
-            } else {
-                alarmManager.setExact(
-                    AlarmManager.RTC_WAKEUP,
-                    triggerTime,
-                    pendingIntent
-                )
-            }
+            alarmManager.setAlarmClock(
+                AlarmManager.AlarmClockInfo(triggerTime, showPendingIntent),
+                pendingIntent
+            )
             Log.d(TAG, "Scheduled exact alarm for reminder #${reminder.id} at $triggerTime (${reminder.formattedTime()})")
         } catch (e: SecurityException) {
             Log.e(TAG, "SecurityException: SCHEDULE_EXACT_ALARM not granted", e)
@@ -103,11 +96,12 @@ class AlarmScheduler(private val context: Context) {
 
     /**
      * Schedules a one-time snooze alarm for the specified [snoozeMinutes] today only.
+     * This runs completely independent of the regular scheduled alarm.
      */
     suspend fun scheduleSnooze(reminderId: Long, label: String, snoozeMinutes: Int) {
         val snoozeMillis = System.currentTimeMillis() + (snoozeMinutes * 60 * 1000L)
 
-        // Persist snooze timestamp in Room
+        // Persist snooze timestamp in Room for today only
         withContext(Dispatchers.IO) {
             val dao = AppDatabase.getInstance(context).reminderDao()
             dao.updateSnooze(reminderId, snoozeMillis)
@@ -137,20 +131,11 @@ class AlarmScheduler(private val context: Context) {
         )
 
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                alarmManager.setExactAndAllowWhileIdle(
-                    AlarmManager.RTC_WAKEUP,
-                    snoozeMillis,
-                    pendingIntent
-                )
-            } else {
-                alarmManager.setExact(
-                    AlarmManager.RTC_WAKEUP,
-                    snoozeMillis,
-                    pendingIntent
-                )
-            }
-            Log.d(TAG, "Scheduled snooze alarm for reminder #$reminderId in $snoozeMinutes min ($snoozeMillis)")
+            alarmManager.setAlarmClock(
+                AlarmManager.AlarmClockInfo(snoozeMillis, showPendingIntent),
+                pendingIntent
+            )
+            Log.d(TAG, "Scheduled one-time snooze alarm for reminder #$reminderId in $snoozeMinutes min ($snoozeMillis)")
         } catch (e: SecurityException) {
             Log.e(TAG, "SecurityException while setting snooze", e)
         }
@@ -207,7 +192,14 @@ class AlarmScheduler(private val context: Context) {
         val activeReminders = dao.getActiveReminders()
         Log.d(TAG, "Rescheduling ${activeReminders.size} active reminders")
         for (reminder in activeReminders) {
+            // Schedule the regular recurring alarm for its fixed time
             schedule(reminder)
+
+            // If there's an active snooze for today, schedule the snooze separately
+            if (reminder.snoozeUntilMillis > System.currentTimeMillis()) {
+                val remainingMinutes = ((reminder.snoozeUntilMillis - System.currentTimeMillis()) / (60 * 1000L)).toInt().coerceAtLeast(1)
+                scheduleSnooze(reminder.id, reminder.label, remainingMinutes)
+            }
         }
     }
 

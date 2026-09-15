@@ -43,7 +43,7 @@ class AlarmReceiver : BroadcastReceiver() {
             PowerManager.PARTIAL_WAKE_LOCK,
             "TabletTime:AlarmWakeLock"
         )
-        wakeLock.acquire(15_000L) // 15 seconds max
+        wakeLock.acquire(60_000L) // 60 seconds max matching alarm timeout
 
         // 2. Play alarm sound and vibration
         AlarmSoundPlayer.play(context)
@@ -97,17 +97,17 @@ class AlarmReceiver : BroadcastReceiver() {
             Log.d(TAG, "Direct activity start failed, relying on fullScreenIntent: ${e.message}")
         }
 
-        // 5. Update database and reschedule next regular alarm
+        // 5. Update database and reschedule next regular alarm safely under wake lock
         val pendingResult = goAsync()
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val dao = AppDatabase.getInstance(context).reminderDao()
                 if (isSnooze) {
-                    // Snooze has fired; clear the snooze record for today
+                    // Snooze has fired; clear the snooze record
                     dao.clearSnooze(reminderId)
                 }
 
-                // Reschedule next regular alarm for this reminder
+                // Reschedule next regular recurring alarm for tomorrow / next scheduled day
                 val reminder = dao.getReminderById(reminderId)
                 if (reminder != null && reminder.isEnabled) {
                     AlarmScheduler(context).schedule(reminder)
@@ -115,6 +115,13 @@ class AlarmReceiver : BroadcastReceiver() {
             } catch (e: Exception) {
                 Log.e(TAG, "Error updating reminder state on alarm fire", e)
             } finally {
+                try {
+                    if (wakeLock.isHeld) {
+                        wakeLock.release()
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error releasing wake lock", e)
+                }
                 pendingResult.finish()
             }
         }
